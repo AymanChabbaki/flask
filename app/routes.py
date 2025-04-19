@@ -33,7 +33,7 @@ def create_preprocessor(categorical_features, numerical_features):
 LEAGUE_MODELS = {
     'epl': {
         'winner': {
-            'model': joblib.load('C:/Users/HP/Desktop/L.E.AI/S6/AppAI/ProjetAppAI/my-react-app/api/models/epl_winner.pkl'),
+            'model': joblib.load('./models/epl_winner.pkl'),
             'categorical_features': ['strHomeTeam', 'strAwayTeam'],
             'numerical_features': [
                 'homeGD', 'homeWinRate', 'homeClassement', 'predictedIntHomeScore', 'predictedResult',
@@ -41,7 +41,7 @@ LEAGUE_MODELS = {
             ]
         },
         'goals': {
-            'model': joblib.load('C:/Users/HP/Desktop/L.E.AI/S6/AppAI/ProjetAppAI/my-react-app/api/models/epl_goals.pkl'),
+            'model': joblib.load('./models/epl_goals.pkl'),
             'categorical_features': ['strHomeTeam', 'strAwayTeam'],
             'numerical_features': [
                 'homeGD', 'homeWinRate', 'homeClassement', 'lastHome5GamesScore',
