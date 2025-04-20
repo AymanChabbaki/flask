@@ -48,8 +48,97 @@ LEAGUE_MODELS = {
                 'awayGD', 'awayWinRate', 'awayClassement', 'lastAway5GamesScore'
             ]
         }
+    },
+        'inwi': {
+        'winner': {
+            'model': joblib.load('./models/inwi_winner.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'predictedIntHomeScore', 'predictedResult',
+                'awayGD', 'awayWinRate', 'awayClassement', 'predictedIntAwayScore'
+            ]
+        },
+        'goals': {
+            'model': joblib.load('./models/inwi_goals.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'lastHome5GamesScore',
+                'awayGD', 'awayWinRate', 'awayClassement', 'lastAway5GamesScore'
+            ]
+        }
+    },
+        'liga': {
+        'winner': {
+            'model': joblib.load('./models/liga_winner.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'predictedIntHomeScore', 'predictedResult',
+                'awayGD', 'awayWinRate', 'awayClassement', 'predictedIntAwayScore'
+            ]
+        },
+        'goals': {
+            'model': joblib.load('./models/liga_goals.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'lastHome5GamesScore',
+                'awayGD', 'awayWinRate', 'awayClassement', 'lastAway5GamesScore'
+            ]
+        }
+    },
+        'bundesliga': {
+        'winner': {
+            'model': joblib.load('./models/bundesliga_winner.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'predictedIntHomeScore', 'predictedResult',
+                'awayGD', 'awayWinRate', 'awayClassement', 'predictedIntAwayScore'
+            ]
+        },
+        'goals': {
+            'model': joblib.load('./models/bundesliga_goals.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'lastHome5GamesScore',
+                'awayGD', 'awayWinRate', 'awayClassement', 'lastAway5GamesScore'
+            ]
+        }
+    },
+        'ligue': {
+        'winner': {
+            'model': joblib.load('./models/ligue_winner.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'predictedIntHomeScore', 'predictedResult',
+                'awayGD', 'awayWinRate', 'awayClassement', 'predictedIntAwayScore'
+            ]
+        },
+        'goals': {
+            'model': joblib.load('./models/ligue_goals.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'lastHome5GamesScore',
+                'awayGD', 'awayWinRate', 'awayClassement', 'lastAway5GamesScore'
+            ]
+        }
+    },
+        'serie': {
+        'winner': {
+            'model': joblib.load('./models/serie_winner.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'predictedIntHomeScore', 'predictedResult',
+                'awayGD', 'awayWinRate', 'awayClassement', 'predictedIntAwayScore'
+            ]
+        },
+        'goals': {
+            'model': joblib.load('./models/serie_goals.pkl'),
+            'categorical_features': ['strHomeTeam', 'strAwayTeam'],
+            'numerical_features': [
+                'homeGD', 'homeWinRate', 'homeClassement', 'lastHome5GamesScore',
+                'awayGD', 'awayWinRate', 'awayClassement', 'lastAway5GamesScore'
+            ]
+        }
     }
-    # Add other leagues similarly
 }
 
 # Initialize preprocessors for each model
@@ -60,14 +149,6 @@ for league, models in LEAGUE_MODELS.items():
             config['numerical_features']
         )
 
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    return jsonify({
-        'status': 'healthy',
-        'version': '1.2.2',
-        'availableLeagues': [k.replace('_', ' ') for k in LEAGUE_MODELS.keys()],
-        'timestamp': datetime.now().isoformat()
-    })
 @app.route('/api/predict', methods=['POST'])
 def predict():
     try:
@@ -77,12 +158,12 @@ def predict():
         # Create initial DataFrame with basic features
         features = {
             'homeGD': [match_data['homeGD']],
-            'homeWinRate': [match_data['homeWins'] / match_data['homePlayed']],
+            'homeWinRate': [match_data['homeWins'] / (match_data['homePlayed'])],
             'homeClassement': [match_data['homeRank']],
             'lastHome5GamesScore': [match_data['lastHome5GamesScore']],
             'strHomeTeam': [match_data['strHomeTeam']],
             'awayGD': [match_data['awayGD']],
-            'awayWinRate': [match_data['awayWins'] / match_data['awayPlayed']],
+            'awayWinRate': [match_data['awayWins'] / (match_data['awayPlayed'])],
             'awayClassement': [match_data['awayRank']],
             'lastAway5GamesScore': [match_data['lastAway5GamesScore']],
             'strAwayTeam': [match_data['strAwayTeam']]
@@ -116,22 +197,31 @@ def predict():
         ]
         X_class = match_df[classification_features]
 
+
+        total_goals = match_df['predictedIntHomeScore'].values[0] + match_df['predictedIntAwayScore'].values[0]
+        home_proba = float((match_df['predictedIntHomeScore'].values[0] / total_goals) * 100) if total_goals > 0 else 33.3
+        away_proba = float((match_df['predictedIntAwayScore'].values[0] / total_goals) * 100) if total_goals > 0 else 33.3
+
         # Get final winner prediction
         winner_pred = LEAGUE_MODELS['epl']['winner']['model'].predict(X_class)[0]
         
         # Convert to frontend-friendly format
         home_goals = float(match_df['predictedIntHomeScore'].values[0])
         away_goals = float(match_df['predictedIntAwayScore'].values[0])
-        winner = ['away', 'draw', 'home'][winner_pred]  # Map 0,1,2 to strings
+        winner = ['away', 'draw', 'home'][winner_pred]
+
+        # Normalize probabilities to sum to 100
+        total_proba = home_proba + away_proba
+        home_proba = round((home_proba / total_proba) * 100, 1)
+        away_proba = round((away_proba / total_proba) * 100, 1)
 
         return jsonify({
             'combined_prediction': {
                 'score': f"{home_goals:.1f}-{away_goals:.1f}",
                 'winner': winner,
                 'probability': {
-                    'home': 60 if winner == 'home' else 30,
-                    'draw': 20 if winner == 'draw' else 10,
-                    'away': 60 if winner == 'away' else 30
+                    'home': home_proba,
+                    'away': away_proba
                 },
                 'expected_goals': {
                     'home': home_goals,
@@ -146,5 +236,6 @@ def predict():
         return jsonify({
             'error': str(e)
         }), 500
+
 if __name__ == '__main__':
     app.run()
