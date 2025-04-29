@@ -257,7 +257,8 @@ def predict():
                 'winner': winner,
                 'probability': {
                     'home': home_proba,
-                    'away': away_proba
+                    'away': away_proba,
+                    'draw': draw_proba
                 },
                 'expected_goals': {
                     'home': home_goals,
