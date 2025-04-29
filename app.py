@@ -197,23 +197,59 @@ def predict():
         ]
         X_class = match_df[classification_features]
 
-
+        
         total_goals = match_df['predictedIntHomeScore'].values[0] + match_df['predictedIntAwayScore'].values[0]
+        
+        # Calculate initial probabilities based on predicted goals
         home_proba = float((match_df['predictedIntHomeScore'].values[0] / total_goals) * 100) if total_goals > 0 else 33.3
         away_proba = float((match_df['predictedIntAwayScore'].values[0] / total_goals) * 100) if total_goals > 0 else 33.3
-
-        # Get final winner prediction
+        
+        # Get final winner prediction (0=away, 1=draw, 2=home)
         winner_pred = LEAGUE_MODELS['epl']['winner']['model'].predict(X_class)[0]
         
         # Convert to frontend-friendly format
         home_goals = float(match_df['predictedIntHomeScore'].values[0])
         away_goals = float(match_df['predictedIntAwayScore'].values[0])
         winner = ['away', 'draw', 'home'][winner_pred]
-
-        # Normalize probabilities to sum to 100
-        total_proba = home_proba + away_proba
-        home_proba = round((home_proba / total_proba) * 100, 1)
-        away_proba = round((away_proba / total_proba) * 100, 1)
+        
+        # Calculate draw probability based on the classifier's prediction probabilities
+        # First get the probabilities for each class from the classifier
+        if hasattr(LEAGUE_MODELS['epl']['winner']['model'], 'predict_proba'):
+            class_probs = LEAGUE_MODELS['epl']['winner']['model'].predict_proba(X_class)[0]
+            # Assuming the classes are ordered as [away, draw, home]
+            away_proba_class = class_probs[0] * 100
+            draw_proba = class_probs[1] * 100
+            home_proba_class = class_probs[2] * 100
+            
+            # Combine the goals-based and classifier probabilities (you can adjust weights)
+            home_proba = round((home_proba * 0.3 + home_proba_class * 0.7), 1)
+            away_proba = round((away_proba * 0.3 + away_proba_class * 0.7), 1)
+            draw_proba = round(draw_proba, 1)
+        else:
+            # If classifier doesn't provide probabilities, use a simple approach
+            draw_proba = 100 - home_proba - away_proba
+            if draw_proba < 0:  # Ensure probabilities make sense
+                total = home_proba + away_proba
+                home_proba = round((home_proba / total) * 100, 1)
+                away_proba = round((away_proba / total) * 100, 1)
+                draw_proba = 0
+        
+        # Ensure probabilities sum to 100 (handle any rounding errors)
+        total = home_proba + away_proba + draw_proba
+        if total != 100:
+            # Distribute the difference to the most probable outcome
+            diff = 100 - total
+            if home_proba >= away_proba and home_proba >= draw_proba:
+                home_proba += diff
+            elif away_proba >= home_proba and away_proba >= draw_proba:
+                away_proba += diff
+            else:
+                draw_proba += diff
+        
+        # Final rounding
+        home_proba = round(home_proba, 1)
+        away_proba = round(away_proba, 1)
+        draw_proba = round(draw_proba, 1)
 
         return jsonify({
             'combined_prediction': {
