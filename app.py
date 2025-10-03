@@ -1,15 +1,11 @@
 from flask import Flask, request, jsonify
 import pandas as pd
 import joblib
-from flask_cors import CORS
-import numpy as np
-from datetime import datetime
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
 
 app = Flask(__name__)
-CORS(app)
 
 def create_preprocessor(categorical_features, numerical_features):
     """Create a preprocessor pipeline for the given features"""
